@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101827">
+  <meta name="description" content="Consulte preços de produtos da Vitrine Zap pelo código SKU.">
+  <title>Vitrine Zap | Consulta de preços</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #101827;
+      color: #f3f6fc;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 24px 16px;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(ellipse at top, #1d3554, #101827 65%);
+    }
+    main {
+      width: 100%;
+      max-width: 540px;
+      padding: 28px;
+      border: 1px solid #34445b;
+      border-radius: 22px;
+      background: #182438;
+      box-shadow: 0 20px 60px #0005;
+    }
+    .brand { color: #54e0b1; font-weight: 800; letter-spacing: 1px; }
+    h1 { margin: 10px 0; font-size: clamp(25px, 6vw, 34px); }
+    .muted { color: #aebbd0; line-height: 1.6; }
+    form { display: flex; gap: 9px; margin: 24px 0; }
+    input, button {
+      min-height: 48px;
+      border-radius: 10px;
+      font: inherit;
+    }
+    input {
+      min-width: 0;
+      flex: 1;
+      padding: 0 13px;
+      color: #fff;
+      background: #101827;
+      border: 1px solid #52627a;
+    }
+    button {
+      padding: 0 17px;
+      color: #08271f;
+      background: #54e0b1;
+      border: 0;
+      font-weight: 750;
+      cursor: pointer;
+    }
+    button:disabled { opacity: .6; cursor: wait; }
+    #resultado {
+      display: none;
+      padding: 20px;
+      border: 1px solid #34445b;
+      border-radius: 14px;
+      background: #101827;
+    }
+    #resultado.visivel { display: block; }
+    #nome { font-size: 21px; font-weight: 750; overflow-wrap: anywhere; }
+    #preco { margin: 12px 0; color: #54e0b1; font-size: 30px; font-weight: 800; }
+    #mensagem { min-height: 24px; color: #f5c779; }
+    .status { font-size: 13px; color: #aebbd0; }
+    footer { margin-top: 24px; font-size: 12px; color: #8796ad; }
+    @media (max-width: 420px) {
+      main { padding: 21px; }
+      form { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="brand">VITRINE ZAP</div>
+    <h1>Consulta de preços</h1>
+    <p class="muted">Digite o código SKU do produto para consultar o preço e a disponibilidade atualizados.</p>
+
+    <form id="formulario">
+      <input id="sku" name="sku" maxlength="80" required
+        autocomplete="off" placeholder="Ex.: PRODUTO-001"
+        aria-label="Código SKU do produto">
+      <button id="consultar" type="submit">Consultar</button>
+    </form>
+
+    <p id="mensagem" role="status" aria-live="polite"></p>
+
+    <section id="resultado" aria-live="polite">
+      <div id="nome"></div>
+      <div id="preco"></div>
+      <div id="codigo" class="status"></div>
+      <p id="descricao" class="muted"></p>
+      <div id="disponibilidade" class="status"></div>
+      <div id="atualizado" class="status"></div>
+    </section>
+
+    <footer>Consulta pública de produtos por SKU.</footer>
+  </main>
+
+  <script>
+    const form = document.getElementById('formulario');
+    const campoSku = document.getElementById('sku');
+    const botao = document.getElementById('consultar');
+    const mensagem = document.getElementById('mensagem');
+    const resultado = document.getElementById('resultado');
+
+    function texto(id, valor) {
+      document.getElementById(id).textContent = valor || '';
+    }
+
+    function formatarPreco(valor) {
+      const numero = Number(valor);
+      if (!Number.isFinite(numero)) return 'Preço não informado';
+      return numero.toLocaleString('pt-BR', {
+        style: 'currency', currency: 'BRL'
+      });
+    }
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const sku = campoSku.value.trim();
+
+      if (!sku) return;
+
+      botao.disabled = true;
+      mensagem.textContent = 'Consultando produto...';
+      resultado.classList.remove('visivel');
+
+      try {
+        const resposta = await fetch(
+          '/api/v1/precos/' + encodeURIComponent(sku),
+          { headers: { Accept: 'application/json' } }
+        );
+        const dados = await resposta.json();
+
+        if (!resposta.ok) {
+          throw new Error(dados.erro || 'Produto não encontrado.');
+        }
+
+        const produto = dados.produto || dados;
+        texto('nome', produto.nome || 'Produto sem nome');
+        texto('preco', formatarPreco(produto.preco));
+        texto('codigo', 'SKU: ' + (produto.sku || sku.toUpperCase()));
+        texto('descricao', produto.descricao || 'Sem descrição cadastrada.');
+        texto(
+          'disponibilidade',
+          produto.disponivel === false ? 'Indisponível' : 'Disponibilidade: consultar vendedor'
+        );
+        texto(
+          'atualizado',
+          produto.atualizadoEm
+            ? 'Atualizado em: ' + new Date(produto.atualizadoEm).toLocaleString('pt-BR')
+            : ''
+        );
+
+        resultado.classList.add('visivel');
+        mensagem.textContent = '';
+      } catch (erro) {
+        mensagem.textContent = erro.message || 'Não foi possível consultar o produto.';
+      } finally {
+        botao.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

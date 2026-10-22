@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101827">
+  <title>Administração | Vitrine Zap Preços</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1120;
+      --panel: #151f32;
+      --border: #293750;
+      --text: #edf3ff;
+      --muted: #a7b5ca;
+      --accent: #38d99b;
+      --danger: #ff6b79;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 16px/1.5 system-ui, sans-serif;
+    }
+    header {
+      padding: 20px;
+      background: #101827;
+      border-bottom: 1px solid var(--border);
+    }
+    header h1 { margin: 0; font-size: 1.35rem; }
+    header p { margin: 5px 0 0; color: var(--muted); }
+    main { width: min(100% - 28px, 900px); margin: 24px auto; }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 18px;
+    }
+    h2 { margin: 0 0 16px; font-size: 1.15rem; }
+    label { display: block; margin: 12px 0 6px; color: var(--muted); }
+    input, textarea, select, button {
+      font: inherit;
+      border-radius: 10px;
+    }
+    input, textarea, select {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      background: #0d1627;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    textarea { min-height: 85px; resize: vertical; }
+    button {
+      padding: 11px 15px;
+      border: 0;
+      background: var(--accent);
+      color: #062117;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button.secondary {
+      background: #30415b;
+      color: var(--text);
+    }
+    button.danger {
+      background: #582532;
+      color: #fff;
+    }
+    button:disabled { opacity: .55; cursor: wait; }
+    .actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 16px; }
+    .hidden { display: none !important; }
+    .message { margin: 12px 0; overflow-wrap: anywhere; }
+    .message.error { color: var(--danger); }
+    .message.success { color: var(--accent); }
+    .muted { color: var(--muted); }
+    .product {
+      padding: 15px 0;
+      border-top: 1px solid var(--border);
+    }
+    .product:first-child { border-top: 0; }
+    .product h3 { margin: 0 0 4px; overflow-wrap: anywhere; }
+    .product p { margin: 4px 0; overflow-wrap: anywhere; }
+    .price { color: var(--accent); font-weight: 800; font-size: 1.1rem; }
+    .status { font-size: .9rem; color: var(--muted); }
+    .topline { display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .topline h2 { margin: 0; }
+    .checkline { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
+    .checkline input { width: auto; }
+    footer { padding: 22px; text-align: center; color: var(--muted); font-size: .85rem; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Vitrine Zap Preços</h1>
+  <p>Painel administrativo · Cadastro de produtos por SKU</p>
+</header>
+
+<main>
+  <section id="loginPanel" class="panel">
+    <h2>Acesso administrativo</h2>
+    <p class="muted">Entre com o usuário e a senha configurados nas variáveis privadas do Render.</p>
+    <form id="loginForm">
+      <label for="username">Usuário</label>
+      <input id="username" name="username" autocomplete="username" required maxlength="200">
+      <label for="password">Senha</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="500">
+      <div class="actions">
+        <button id="loginButton" type="submit">Entrar</button>
+      </div>
+    </form>
+    <p id="loginMessage" class="message" role="status" aria-live="polite"></p>
+  </section>
+
+  <section id="appPanel" class="hidden">
+    <div class="panel">
+      <div class="topline">
+        <h2 id="formTitle">Cadastrar produto</h2>
+        <button id="newButton" type="button" class="secondary">Novo produto</button>
+      </div>
+      <p id="editNotice" class="muted hidden">Editando um produto existente. O SKU não pode ser alterado.</p>
+
+      <form id="productForm">
+        <label for="sku">SKU / código</label>
+        <input id="sku" name="sku" required maxlength="80" autocomplete="off" placeholder="Ex.: PRODUTO-001">
+
+        <label for="nome">Nome do produto</label>
+        <input id="nome" name="nome" required maxlength="160">
+
+        <label for="preco">Preço (R$)</label>
+        <input id="preco" name="preco" type="number" required min="0" step="0.01" inputmode="decimal">
+
+        <label for="descricao">Descrição</label>
+        <textarea id="descricao" name="descricao" maxlength="1000"></textarea>
+
+        <label class="checkline">
+          <input id="disponivel" name="disponivel" type="checkbox" checked>
+          Produto disponível para consulta pública
+        </label>
+
+        <div class="actions">
+          <button id="saveButton" type="submit">Salvar produto</button>
+          <button id="cancelButton" type="button" class="secondary hidden">Cancelar edição</button>
+        </div>
+      </form>
+      <p id="formMessage" class="message" role="status" aria-live="polite"></p>
+    </div>
+
+    <div class="panel">
+      <div class="topline">
+        <h2>Produtos cadastrados</h2>
+        <button id="refreshButton" type="button" class="secondary">Atualizar lista</button>
+      </div>
+      <label for="filter">Filtrar por SKU ou nome</label>
+      <input id="filter" type="search" placeholder="Digite para pesquisar">
+      <p id="listMessage" class="message" role="status" aria-live="polite"></p>
+      <div id="productList"></div>
+    </div>
+
+    <div class="panel">
+      <div class="topline">
+        <div>
+          <strong id="loggedUser"></strong>
+          <p class="muted">Sessão administrativa</p>
+        </div>
+        <button id="logoutButton" type="button" class="secondary">Sair</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>Vitrine Zap Preços · Área administrativa protegida</footer>
+
+<script>
+'use strict';
+
+const $ = (id) => document.getElementById(id);
+const state = { produtos: [], editingSku: null };
+
+function showMessage(id, message = '', type = '') {
+  const element = $(id);
+  element.textContent = message;
+  element.className = 'message' + (type ? ' ' + type : '');
+}
+
+async function api(url, options = {}) {
+  const response = await fetch(url, {
+    credentials: 'same-origin',
+    ...options,
+    headers: {
+      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(options.headers || {})
+    }
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (response.status === 401 && url !== '/api/admin/login') {
+    showLogin();
+    throw new Error(data.erro || 'Sessão encerrada. Entre novamente.');
+  }
+
+  if (!response.ok) {
+    throw new Error(data.erro || 'Não foi possível concluir a operação.');
+  }
+  return data;
+}
+
+function showLogin() {
+  $('loginPanel').classList.remove('hidden');
+  $('appPanel').classList.add('hidden');
+}
+
+function showApp(username) {
+  $('loginPanel').classList.add('hidden');
+  $('appPanel').classList.remove('hidden');
+  $('loggedUser').textContent = 'Conectado como: ' + username;
+}
+
+async function checkSession() {
+  try {
+    const data = await api('/api/admin/me');
+    showApp(data.usuario);
+    await loadProducts();
+  } catch {
+    showLogin();
+  }
+}
+
+$('loginForm').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  $('loginButton').disabled = true;
+  showMessage('loginMessage', 'Verificando acesso...');
+  try {
+    const data = await api('/api/admin/login', {
+      method: 'POST',
+      body: JSON.stringify({
+        username: $('username').value,
+        password: $('password').value
+      })
+    });
+    $('password').value = '';
+    showApp(data.usuario);
+    showMessage('loginMessage');
+    await loadProducts();
+  } catch (error) {
+    showMessage('loginMessage', error.message, 'error');
+  } finally {
+    $('loginButton').disabled = false;
+  }
+});
+
+function resetForm() {
+  state.editingSku = null;
+  $('productForm').reset();
+  $('sku').disabled = false;
+  $('disponivel').checked = true;
+  $('formTitle').textContent = 'Cadastrar produto';
+  $('saveButton').textContent = 'Salvar produto';
+  $('editNotice').classList.add('hidden');
+  $('cancelButton').classList.add('hidden');
+  showMessage('formMessage');
+}
+
+$('newButton').addEventListener('click', () => {
+  resetForm();
+  $('sku').focus();
+});
+
+$('cancelButton').addEventListener('click', resetForm);
+
+$('productForm').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const sku = state.editingSku || $('sku').value.trim().toUpperCase();
+  const payload = {
+    nome: $('nome').value.trim(),
+    preco: $('preco').value,
+    descricao: $('descricao').value.trim(),
+    disponivel: $('disponivel').checked
+  };
+
+  if (!state.editingSku) payload.sku = sku;
+
+  $('saveButton').disabled = true;
+  showMessage('formMessage', 'Salvando produto...');
+  try {
+    const editing = state.editingSku !== null;
+    await api(
+      editing
+        ? '/api/admin/produtos/' + encodeURIComponent(state.editingSku)
+        : '/api/admin/produtos',
+      {
+        method: editing ? 'PUT' : 'POST',
+        body: JSON.stringify(payload)
+      }
+    );
+    showMessage('formMessage', editing ? 'Produto atualizado.' : 'Produto cadastrado.', 'success');
+    resetForm();
+    await loadProducts();
+  } catch (error) {
+    showMessage('formMessage', error.message, 'error');
+  } finally {
+    $('saveButton').disabled = false;
+  }
+});
+
+function startEdit(product) {
+  state.editingSku = product.sku;
+  $('sku').value = product.sku;
+  $('sku').disabled = true;
+  $('nome').value = product.nome || '';
+  $('preco').value = product.preco ?? '';
+  $('descricao').value = product.descricao || '';
+  $('disponivel').checked = product.disponivel !== false;
+  $('formTitle').textContent = 'Editar produto';
+  $('saveButton').textContent = 'Salvar alterações';
+  $('editNotice').classList.remove('hidden');
+  $('cancelButton').classList.remove('hidden');
+  showMessage('formMessage');
+  $('productForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderProducts() {
+  const filter = $('filter').value.trim().toLocaleLowerCase('pt-BR');
+  const products = state.produtos.filter((product) =>
+    String(product.sku || '').toLocaleLowerCase('pt-BR').includes(filter) ||
+    String(product.nome || '').toLocaleLowerCase('pt-BR').includes(filter)
+  );
+
+  const container = $('productList');
+  container.replaceChildren();
+
+  if (!products.length) {
+    const empty = document.createElement('p');
+    empty.className = 'muted';
+    empty.textContent = filter ? 'Nenhum produto corresponde à pesquisa.' : 'Nenhum produto cadastrado.';
+    container.appendChild(empty);
+    return;
+  }
+
+  for (const product of products) {
+    const card = document.createElement('article');
+    card.className = 'product';
+
+    const title = document.createElement('h3');
+    title.textContent = product.nome || 'Produto sem nome';
+
+    const sku = document.createElement('p');
+    sku.textContent = 'SKU: ' + product.sku;
+
+    const price = document.createElement('p');
+    price.className = 'price';
+    price.textContent = Number(product.preco).toLocaleString('pt-BR', {
+      style: 'currency', currency: 'BRL'
+    });
+
+    const description = document.createElement('p');
+    description.textContent = product.descricao || 'Sem descrição';
+
+    const status = document.createElement('p');
+    status.className = 'status';
+    status.textContent = product.disponivel === false ? 'Indisponível' : 'Disponível';
+
+    card.append(title, sku, price, description, status);
+
+    const actions = document.createElement('div');
+    actions.className = 'actions';
+
+    const edit = document.createElement('button');
+    edit.type = 'button';
+    edit.className = 'secondary';
+    edit.textContent = 'Editar';
+    edit.addEventListener('click', () => startEdit(product));
+
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'danger';
+    remove.textContent = 'Excluir';
+    remove.addEventListener('click', async () => {
+      if (!confirm('Excluir definitivamente o produto ' + product.sku + '?')) return;
+      remove.disabled = true;
+      try {
+        await api('/api/admin/produtos/' + encodeURIComponent(product.sku), {
+          method: 'DELETE'
+        });
+        if (state.editingSku === product.sku) resetForm();
+        showMessage('listMessage', 'Produto excluído.', 'success');
+        await loadProducts();
+      } catch (error) {
+        showMessage('listMessage', error.message, 'error');
+      } finally {
+        remove.disabled = false;
+      }
+    });
+
+    actions.append(edit, remove);
+    card.appendChild(actions);
+    container.appendChild(card);
+  }
+}
+
+async function loadProducts() {
+  showMessage('listMessage', 'Carregando produtos...');
+  try {
+    const data = await api('/api/admin/produtos');
+    state.produtos = Array.isArray(data.produtos) ? data.produtos : [];
+    renderProducts();
+    showMessage('listMessage', state.produtos.length + ' produto(s) carregado(s).', 'success');
+  } catch (error) {
+    showMessage('listMessage', error.message, 'error');
+    throw error;
+  }
+}
+
+$('filter').addEventListener('input', renderProducts);
+$('refreshButton').addEventListener('click', () => {
+  loadProducts().catch(() => {});
+});
+
+$('logoutButton').addEventListener('click', async () => {
+  $('logoutButton').disabled = true;
+  try {
+    await api('/api/admin/logout', { method: 'POST' });
+  } catch {
+    // Mesmo se a sessão já expirou, o painel volta à tela de login.
+  } finally {
+    state.produtos = [];
+    resetForm();
+    $('productList').replaceChildren();
+    showLogin();
+    $('logoutButton').disabled = false;
+  }
+});
+
+checkSession();
+</script>
+</body>
+</html>
