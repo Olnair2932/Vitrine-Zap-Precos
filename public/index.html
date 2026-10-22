@@ -57,6 +57,28 @@
       cursor: pointer;
     }
     button:disabled { opacity: .6; cursor: wait; }
+    .admin-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 48px;
+      margin: 0 0 22px;
+      padding: 12px 16px;
+      border: 1px solid #54e0b1;
+      border-radius: 10px;
+      color: #54e0b1;
+      background: #101827;
+      font-weight: 750;
+      text-align: center;
+      text-decoration: none;
+      transition: background .2s, color .2s;
+    }
+    .admin-link:hover,
+    .admin-link:focus-visible {
+      color: #08271f;
+      background: #54e0b1;
+    }
     #resultado {
       display: none;
       padding: 20px;
@@ -88,6 +110,10 @@
         aria-label="Código SKU do produto">
       <button id="consultar" type="submit">Consultar</button>
     </form>
+
+    <a class="admin-link" href="/admin">
+      🔐 Painel Administrador
+    </a>
 
     <p id="mensagem" role="status" aria-live="polite"></p>
 
